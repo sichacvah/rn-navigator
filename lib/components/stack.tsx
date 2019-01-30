@@ -2,6 +2,7 @@ import * as React from 'react'
 import { StyleSheet } from 'react-native'
 import { Screen, ScreenContainer } from 'react-native-screens'
 import { Navigator, getNavigator } from '../navigator'
+import { shallowCompare } from '../utils'
 import { Store, State } from '../store'
 import { TransitionContext } from '../transitionContext';
 
@@ -32,28 +33,34 @@ function addComponentReference(state: State, id: number, comp: Object) {
   }
 }
 
-const Stack: React.SFC<StackProps> = (props: StackProps) => {
-  const { stack, store, transitionContext, currentId } = props
-  const navigator = getNavigator(store)
-  const { screens } = store.deref()
-  return (
-    <ScreenContainer style={StyleSheet.absoluteFill}>
-      {stack.map(route => {
-        const RouteComponent = screens[route.screen]
-        // const element = (typeof RouteComponent === 'function') ?  : <RouteComponent route={route} navigator={navigator} ref={(comp: Object) => store.swap(addComponentReference, route.id, comp)} />
-        const active = isActive(currentId, route.id, transitionContext)
-        return (
-          <Screen key={route.id} active={active} style={StyleSheet.absoluteFillObject}>
-            <RouteComponent
-              route={route}
-              operation={transitionContext ? transitionContext.operation : undefined}
-              value={transitionContext ? transitionContext.animation.value : undefined}
-              navigator={navigator}/>
-          </Screen>
-        )
-      })}
-    </ScreenContainer>
-  )
+export default class Stack extends React.Component<StackProps> {
+  shouldComponentUpdate(prevProps: StackProps) {
+    const { props } = this
+    return shallowCompare(prevProps, props, ['raw'])
+  }
+
+  render() {
+    const { props } = this
+    const { stack, store, transitionContext, currentId } = props
+    const navigator = getNavigator(store)
+    const { screens } = store.deref()
+    return (
+      <ScreenContainer style={StyleSheet.absoluteFill}>
+        {stack.map(route => {
+          const RouteComponent = screens[route.screen]
+          // const element = (typeof RouteComponent === 'function') ?  : <RouteComponent route={route} navigator={navigator} ref={(comp: Object) => store.swap(addComponentReference, route.id, comp)} />
+          const active = isActive(currentId, route.id, transitionContext)
+          return (
+            <Screen key={route.id} active={active} style={StyleSheet.absoluteFillObject}>
+              <RouteComponent
+                route={route.id}
+                transitionContext={transitionContext}
+                navigator={navigator}/>
+            </Screen>
+          )
+        })}
+      </ScreenContainer>
+    )
+  }
 }
 
-export default React.memo(Stack)

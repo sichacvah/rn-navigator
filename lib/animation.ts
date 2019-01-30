@@ -2,8 +2,7 @@ import { Animated } from 'react-native'
 
 export interface Animation {
   value: Animated.Value,
-  duration: number,
-  rawValue: number
+  duration: number
 }
 
 
@@ -14,7 +13,6 @@ export interface Animator {
 
 export function create(): Animator {
   const value = new Animated.Value(0)
-  console.log('NEW VALUE')
   return {
     getAnimation: () => ({
       value,
@@ -23,7 +21,7 @@ export function create(): Animator {
     }),
     perform: ({from, to, duration}, cb) => {
       value.setValue(from)
-      Animated.timing(value, { toValue: to, duration }).start(cb)
+      Animated.timing(value, { toValue: to, duration, useNativeDriver: true }).start(cb)
     }
   }
 }

@@ -26,16 +26,18 @@ export const createPopInteractor = (animation: Animation): Interactor & StrictIn
     if (state.stack.length < 2) return state
     const route = last(state.stack) as Route
     const prev  = llast(state.stack) as Route
+
     return {
       ...state,
       transitionContext: {
-        from: prev,
-        to: route,
+        to: prev,
+        from: route,
         animation,
         operation: Operation.pop,
         canceled: false,
         status: TransitionStatus.performing
-      }
+      },
+      currentId: prev.id
     }
   },
   perform: state => {
@@ -52,10 +54,13 @@ export const createPopInteractor = (animation: Animation): Interactor & StrictIn
     const { transitionContext } = state
     if (!transitionContext) return state
     const stack = !transitionContext.canceled ? init(state.stack) : state.stack
+    const { from, to } = transitionContext
     return {
       ...state,
       stack,
-      transitionContext: undefined
+      raw: {},
+      transitionContext: undefined,
+      currentId: transitionContext.canceled ? (from as Route).id : to.id
     }
   },
   onPerform: (store: Store, animator: Animator, interactor: Interactor) => {
@@ -66,18 +71,18 @@ export const createPopInteractor = (animation: Animation): Interactor & StrictIn
     animator.perform({ from: 0, to: 1, duration: animation.duration }, onAnimationFinish)
   },
   onFinish: (store: Store, animator: Animator, interactor: Interactor) => {
-    const { transitionContext } = store.deref()
+    const { transitionContext, raw } = store.deref()
     if (!transitionContext) return
     const { animation } = transitionContext
-    const { rawValue } = animation
+    const value = raw.animation || 0
     const { canceled } = transitionContext
     const onAnimationFinish = () => store.swap(interactor.clear)
     if (canceled) {
-      if (rawValue === 0) return onAnimationFinish()
-      animator.perform({ from: rawValue, to: 0, duration: animation.duration * (1 - rawValue) }, onAnimationFinish)
+      if (value === 0) return onAnimationFinish()
+      animator.perform({ from: value, to: 0, duration: animation.duration }, onAnimationFinish)
     } else {
-      if (rawValue === 1) return onAnimationFinish()
-      animator.perform({ from: rawValue, to: 1, duration: animation.duration * rawValue }, onAnimationFinish)
+      if (value === 1) return onAnimationFinish()
+      animator.perform({ from: value, to: 1, duration: animation.duration }, onAnimationFinish)
     }
   }
 })
@@ -117,7 +122,8 @@ export const createPushInteractor = (screen: Screen, animation: Animation): Inte
     return {
       ...state,
       stack,
-      transitionContext: undefined
+      transitionContext: undefined,
+      raw: {}
     }
   },
   onPerform: (store: Store, animator: Animator, interactor: Interactor) => {
@@ -128,10 +134,10 @@ export const createPushInteractor = (screen: Screen, animation: Animation): Inte
     animator.perform({ from: 0, to: 1, duration: animation.duration }, perform)
   },
   onFinish: (store: Store, animator: Animator, interactor: Interactor) => {
-    const { transitionContext } = store.deref()
+    const { transitionContext, raw } = store.deref()
     if (!transitionContext) return
     const { animation } = transitionContext
-    const { rawValue } = animation
+    const rawValue = raw.animation || 0
     const { canceled } = transitionContext
     const onAnimationFinish = () => store.swap(interactor.clear)
     if (canceled) {

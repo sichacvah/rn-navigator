@@ -15,10 +15,27 @@ import { TransitionContext, Operation, TransitionStatus } from './lib/transition
 import { InteractorLifeCycle, Interactor } from './lib/interactor'
 import { Store, State } from './lib/store'
 import { Animator } from './lib/animation'
+import {useScreens} from 'react-native-screens'
 
-const getTransform = (value?: Animated.Value, operation?: Operation): Object | undefined => {
-  if (!value) return undefined
-  if (operation === Operation.push) {
+useScreens()
+
+enum Direction {
+  from = 'from',
+  to = 'to'
+}
+
+function getDirection(route: number, transitionContext: TransitionContext): Direction {
+  if (transitionContext.from && route === transitionContext.from.id) return Direction.from
+  return Direction.to
+}
+
+const getTransform = (route: number, transitionContext?: TransitionContext): Object | undefined => {
+  if (!transitionContext) return undefined
+  const { animation, from, to, operation } = transitionContext
+  const value = animation.value
+  const direction = getDirection(route, transitionContext)
+  
+  if (operation === Operation.push && direction === Direction.to) {
     return {
       transform: [{
         translateX: value.interpolate({
@@ -28,7 +45,7 @@ const getTransform = (value?: Animated.Value, operation?: Operation): Object | u
       }]
     }
   }
-  if (operation === Operation.pop) {
+  if (operation === Operation.pop && direction === Direction.from) {
     return {
       transform: [{
         translateX: value.interpolate({
@@ -41,7 +58,7 @@ const getTransform = (value?: Animated.Value, operation?: Operation): Object | u
   
 }
 
-type RouteProps = { navigator: Navigator, value: Animated.Value, operation: Operation }
+type RouteProps = { route: number, navigator: Navigator, transitionContext?: TransitionContext }
 
 const First: React.SFC<RouteProps> = ({navigator}: RouteProps) => {
   return (
@@ -56,7 +73,6 @@ const First: React.SFC<RouteProps> = ({navigator}: RouteProps) => {
 function finishInteraction(state: State, canceled: boolean): State {
   const { transitionContext } = state
   if (!transitionContext) return state
-  console.log('!canceled!', canceled)
   return {
     ...state,
     transitionContext: {
@@ -91,20 +107,19 @@ class Second extends React.Component<RouteProps> {
   onFinish?: OnFinishFn
   updateValue?: UpdateValue
   interactionLifeCycle: InteractorLifeCycle
-
   constructor(props: RouteProps) {
     super(props)
 
+    
     this._panResponder = PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => true,
       onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
       onMoveShouldSetPanResponder: (evt, gestureState) => true,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
       onPanResponderGrant: (evt, gestureState) => {
-        console.log('GRANT', gestureState.moveX)
         props.navigator.pop({lifeCicleListener: this.interactionLifeCycle})
       },
-      onPanResponderMove: (evt, {moveX}) => {
+      onPanResponderMove: (evt, {moveX, vx}) => {
         // if (moveX / Dimensions.get('window').width > 0.1) {
         //   this.onFinish && this.onFinish(false)
         // } else {
@@ -112,8 +127,10 @@ class Second extends React.Component<RouteProps> {
         // }
         this.updateValue && this.updateValue(moveX / Dimensions.get('window').width)
       },
-      onPanResponderEnd: (evt, {moveX}) => {
-        if (moveX / Dimensions.get('window').width > 0.1) {
+
+      onPanResponderEnd: (evt, state) => {
+        const {moveX, vx} = state
+        if (!vx && moveX / Dimensions.get('window').width > 0.5 || vx && vx > 2) {
           this.onFinish && this.onFinish(false)
         } else {
           this.onFinish && this.onFinish(true)
@@ -125,8 +142,8 @@ class Second extends React.Component<RouteProps> {
 
 
   render() {
-    const {navigator, value, operation} = this.props
-    const animation = getTransform(value, operation)
+    const {navigator, transitionContext, route} = this.props
+    const animation = getTransform(route, transitionContext)
 
     return (
       <Animated.View style={[styles.container, {backgroundColor: 'yellow'}, animation]}>
@@ -134,6 +151,7 @@ class Second extends React.Component<RouteProps> {
         <Text style={styles.welcome}>Second Screen</Text>
         <Text style={styles.instructions}>To get started, edit App.js</Text>
         <Button title='Pop to Screen 1' onPress={() => navigator.pop({})} />
+        <Button title='Push to Screen 1' onPress={() => navigator.push('Second', {})} />
       </Animated.View>
     )
   }

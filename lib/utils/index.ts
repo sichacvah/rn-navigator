@@ -37,5 +37,5 @@ export function iinit<T>(arr: Array<T>): Array<T> {
 }
 
 export function llast<T>(arr: Array<T>): T | undefined {
-  return last(iinit(arr))
+  return last(init(arr))
 }

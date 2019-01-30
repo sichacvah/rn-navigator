@@ -11,12 +11,8 @@ const updateAnimationValue = (state: State, value: number): State => {
   if (!transitionContext) return state
   return {
     ...state,
-    transitionContext: {
-      ...transitionContext,
-      animation: {
-        ...transitionContext.animation,
-        rawValue: value
-      }
+    raw: {
+      animation: value
     }
   }
 }

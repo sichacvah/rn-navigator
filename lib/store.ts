@@ -12,7 +12,10 @@ export interface State {
   currentId:  number,
   screens:    Screens,
   refs:       Refs,
-  transitionContext?: TransitionContext 
+  transitionContext?: TransitionContext,
+  raw: {
+    [key: string]: number
+  }
 }
 
 export type Store = Atom<State>
@@ -24,7 +27,8 @@ export function createStore(initialScreen: string, screens: Screens): Store {
     stack,
     currentId: 0,
     screens,
-    refs: {}
+    refs: {},
+    raw: {}
   })
 }
 
