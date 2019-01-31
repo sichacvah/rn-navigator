@@ -1,17 +1,37 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "isolatedModules": true,
-    "jsx": "react-native",
-    "lib": ["es6"],
     "moduleResolution": "node",
-    "noEmit": true,
     "strict": true,
     "sourceMap": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": false,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "pretty": true,
+    "allowJs": false,
+    "lib": ["es6"],
     "target": "esnext",
-    "strictNullChecks": true
+    "module": "commonjs",
+    "declaration": true,
+    "skipLibCheck": true,
+    "types": [
+      "jest",
+      "react",
+      "react-native",
+      "react-test-renderer"
+    ],
+    "jsx": "react",
+    "outDir": "./dist",
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "example"],
+  "include": [
+    "./lib/**/*"
+  ]
 }
